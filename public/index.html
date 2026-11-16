@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短縮URL by ぬこぬこサーバー</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="p-5 bg-gray-800 text-white">
+    <div class="border rounded-sm h-full p-5">
+        <h1 class="text-3xl border-b w-fit mb-3">短縮URLサービス</h1>
+        <p class="mb-3">短縮URLサービスへようこそ。<br/>下の入力欄にURLを入力し、<br/>「作成」を押してください。</p>
+        <h4 class="text-2xl">URLを入力してください。</h4>
+        <input id="url" class="border p-2 rounded-sm h-full mb-3"><br/>
+        <button class="bg-blue-600 p-2 rounded-sm text-white" onclick="createLink()">作成</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function createLink() {
+            const urlElement = document.getElementById("url").value;
+            if (urlElement == "") {
+                alert("URLを入力してください。")
+                return;
+            }
+
+            const res = await fetch("/api/create", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    Url: urlElement.value
+                })
+            })
+
+            const json = await res.json();
+
+            const result = document.getElementById("result")
+
+            if (res.status == 200) {
+                result.innerHTML = "";
+
+                const link = document.createElement("a");
+                link.textContent = "https://nuk.red/s/" + json.code;
+                link.href = "https://nuk.red/s/" + json.code;
+                result.appendChild(link);
+            } else if (res.status == 500) {
+                result.innerHTML = "";
+                alert(res.error)
+            }
+        }
+    </script>
+</body>
+</html>
