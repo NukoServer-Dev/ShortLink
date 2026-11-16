@@ -35,3 +35,5 @@ go.work.sum
 data.db
 data.db-shm
 data.db-wal
+
+shortlink-linux
