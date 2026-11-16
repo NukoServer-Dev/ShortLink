@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>カスタム短縮URL作成 | 管理者</title>
+  <style>
+    :root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; background: #111827; color: #f9fafb; }
+    body { max-width: 720px; margin: 0 auto; padding: 24px; }
+    input, button { display: block; box-sizing: border-box; width: 100%; font: inherit; padding: 10px 12px; margin: 10px 0 18px; border: 1px solid #4b5563; border-radius: 6px; }
+    input { background: #1f2937; color: inherit; }
+    button { width: auto; background: #2563eb; border: 0; color: white; cursor: pointer; }
+    a { color: #93c5fd; }
+    .muted { color: #9ca3af; }
+  </style>
+</head>
+<body>
+  <p><a href="/admin">← 管理者パネルへ戻る</a></p>
+  <h1>カスタム短縮URLを作成</h1>
+  <p class="muted">短縮URLの末尾に使うコードを指定します。英数字、ハイフン、アンダースコアを1〜64文字で入力してください。</p>
+  <form id="createForm">
+    <label for="code">カスタムコード</label>
+    <input id="code" name="code" minlength="1" maxlength="64" pattern="[A-Za-z0-9_-]+" autocomplete="off" required>
+    <label for="url">転送先URL</label>
+    <input id="url" name="url" type="url" placeholder="https://example.com" required>
+    <button type="submit">短縮URLを作成</button>
+  </form>
+  <p id="status" aria-live="polite"></p>
+  <script>
+    const form = document.getElementById("createForm");
+    const status = document.getElementById("status");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      status.textContent = "作成中...";
+      const values = new FormData(form);
+      try {
+        const response = await fetch("/api/admin/links", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: values.get("code"), url: values.get("url") })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.Error || "短縮URLを作成できませんでした");
+
+        const shortUrl = `${location.origin}/s/${encodeURIComponent(data.Code)}`;
+        status.replaceChildren(document.createTextNode("作成しました: "));
+        const link = document.createElement("a");
+        link.href = shortUrl;
+        link.textContent = shortUrl;
+        status.append(link);
+        form.reset();
+      } catch (error) {
+        status.textContent = error.Message;
+      }
+    });
+  </script>
+</body>
+</html>

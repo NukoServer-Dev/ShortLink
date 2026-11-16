@@ -63,9 +63,11 @@ func main() {
 	mux.HandleFunc("GET /s/{code}", app.redirect)
 	mux.HandleFunc("POST /api/create", app.create)
 	mux.HandleFunc("GET /admin", app.adminPage)
+	mux.HandleFunc("GET /admin/create", app.requireAdmin(app.adminCreatePage))
 	mux.HandleFunc("POST /api/admin/login", app.adminLogin)
 	mux.HandleFunc("POST /api/admin/logout", app.requireAdmin(app.adminLogout))
 	mux.HandleFunc("GET /api/admin/links", app.requireAdmin(app.adminLinks))
+	mux.HandleFunc("POST /api/admin/links", app.requireAdmin(app.adminCreateLink))
 	mux.HandleFunc("POST /api/admin/links/{code}/ban", app.requireAdmin(app.adminBan))
 	mux.HandleFunc("POST /api/admin/links/{code}/warn", app.requireAdmin(app.adminWarn))
 	mux.HandleFunc("DELETE /api/admin/links/{code}", app.requireAdmin(app.adminDelete))
@@ -115,13 +117,9 @@ func (app *application) create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "不正なJSON形式です")
 		return
 	}
-	parsed, err := url.ParseRequestURI(strings.TrimSpace(payload.Url))
-	if err != nil || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Hostname() == "" || parsed.User != nil {
-		writeError(w, http.StatusBadRequest, "http または https のURLを入力してください")
-		return
-	}
-	if consts.IsInclude(parsed.String()) || isPrivateHost(parsed.Hostname()) {
-		writeError(w, http.StatusBadRequest, "禁止されたURLです")
+	target, err := validateTargetURL(payload.Url)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -131,7 +129,7 @@ func (app *application) create(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "サーバー側でエラーが発生しました")
 			return
 		}
-		link := models.Links{Code: code, Url: parsed.String(), CreatorIP: clientIP(r)}
+		link := models.Links{Code: code, Url: target, CreatorIP: clientIP(r)}
 		if err := lib.DB.Create(&link).Error; err == nil {
 			writeJSON(w, http.StatusCreated, models.CreateResponse{Status: "ok", Code: code})
 			return
@@ -149,6 +147,69 @@ func (app *application) adminPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "public/admin.html")
 }
 
+func (app *application) adminCreatePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	http.ServeFile(w, r, "public/admin-create.html")
+}
+
+func (app *application) adminCreateLink(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBody)
+	var payload struct {
+		Code string `json:"code"`
+		URL  string `json:"url"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		writeError(w, http.StatusBadRequest, "不正なJSON形式です")
+		return
+	}
+	payload.Code = strings.TrimSpace(payload.Code)
+	if !validCustomCode(payload.Code) {
+		writeError(w, http.StatusBadRequest, "コードは英数字、ハイフン、アンダースコアの1〜64文字で入力してください")
+		return
+	}
+	target, err := validateTargetURL(payload.URL)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	link := models.Links{Code: payload.Code, Url: target, CreatorIP: "admin:" + app.adminUser}
+	if err := lib.DB.Create(&link).Error; err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "unique") || strings.Contains(strings.ToLower(err.Error()), "constraint") {
+			writeError(w, http.StatusConflict, "このコードはすでに使用されています")
+			return
+		}
+		log.Printf("管理者による短縮URLの保存に失敗しました: %v", err)
+		writeError(w, http.StatusInternalServerError, "短縮URLを保存できませんでした")
+		return
+	}
+	writeJSON(w, http.StatusCreated, models.CreateResponse{Status: "ok", Code: payload.Code})
+}
+
+func validCustomCode(code string) bool {
+	if len(code) == 0 || len(code) > 64 {
+		return false
+	}
+	for _, char := range code {
+		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') || char == '-' || char == '_' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func validateTargetURL(value string) (string, error) {
+	parsed, err := url.ParseRequestURI(strings.TrimSpace(value))
+	if err != nil || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Hostname() == "" || parsed.User != nil {
+		return "", errors.New("http または https のURLを入力してください")
+	}
+	if consts.IsInclude(parsed.String()) || isPrivateHost(parsed.Hostname()) {
+		return "", errors.New("禁止されたURLです")
+	}
+	return parsed.String(), nil
+}
+
 func (app *application) adminLogin(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBody)
 	var credentials struct {
@@ -161,13 +222,13 @@ func (app *application) adminLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	value := app.signSession(time.Now().Add(adminSessionTTL).Unix())
 	secure := envOr("APP_ENV", "production") == "production"
-	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: value, Path: "/api/admin", HttpOnly: true, Secure: secure, SameSite: http.SameSiteStrictMode, Expires: time.Now().Add(adminSessionTTL), MaxAge: int(adminSessionTTL.Seconds())})
+	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: value, Path: "/", HttpOnly: true, Secure: secure, SameSite: http.SameSiteStrictMode, Expires: time.Now().Add(adminSessionTTL), MaxAge: int(adminSessionTTL.Seconds())})
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func (app *application) adminLogout(w http.ResponseWriter, r *http.Request) {
 	secure := envOr("APP_ENV", "production") == "production"
-	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: "", Path: "/api/admin", HttpOnly: true, Secure: secure, SameSite: http.SameSiteStrictMode, MaxAge: -1})
+	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: "", Path: "/", HttpOnly: true, Secure: secure, SameSite: http.SameSiteStrictMode, MaxAge: -1})
 	w.WriteHeader(http.StatusNoContent)
 }
 
