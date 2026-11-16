@@ -4,18 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>短縮URL by ぬこぬこサーバー</title>
+    <link rel="icon" type="image/svg" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZjdiMGYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1saW5rIHByZXZpZXctaWNvbiI+PHBhdGggZD0iTTEwIDEzYTUgNSAwIDAgMCA3LjU0LjU0bDMtM2E1IDUgMCAwIDAtNy4wNy03LjA3bC0xLjcyIDEuNzEiLz48cGF0aCBkPSJNMTQgMTFhNSA1IDAgMCAwLTcuNTQtLjU0bC0zIDNhNSA1IDAgMCAwIDcuMDcgNy4wN2wxLjcxLTEuNzEiLz48L3N2Zz4=">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="p-5 bg-gray-800 text-white">
-    <div class="border rounded-sm h-full p-5">
+    <div class="border rounded-sm h-full p-5 mb-5">
         <h1 class="text-3xl border-b w-fit mb-3">短縮URLサービス</h1>
-        <p class="mb-3">短縮URLサービスへようこそ。<br/>下の入力欄にURLを入力し、<br/>「作成」を押してください。</p>
+        <p class="mb-3">短縮URLサービスへようこそ。<br/>下の入力欄にURLを入力し、<br/>「作成」を押してください。<br/><span class="text-xs">※作成を行うと、利用規約とプライバシーポリシーに同意したものとします。</span></p>
         <h4 class="text-2xl">URLを入力してください。</h4>
         <input id="url" type="url" class="border p-2 rounded-sm h-full mb-3" placeholder="https://example.com" required><br>
         <button class="bg-blue-600 p-2 rounded-sm text-white" onclick="createLink()">作成</button>
 
         <br/>
         <div id="result" class="mt-3"></div>
+    </div>
+
+    <div class="border rounded-sm h-full p-5 mb-5">
+        <h1 class="text-3xl border-b w-fit mb-3">利用規約</h1>
+        <p>
+            この利用規約（以下「本規約」といいます）は、本Webサイト上で提供するサービスの利用条件を定めるものです。<br/>
+            ユーザーは、必ず本規約に従って本サービスをご利用いただきます。<br/><br/>
+
+            この利用規約は、本サービスを使用するすべてのユーザーに適用されます。<br/><br/>
+
+            禁止事項<br/>
+            ・荒らしやフィッシング詐欺目的のURLの作成、転送<br>
+            ・法令または公序良俗に反するURLの転送<br/>
+            ・犯罪行為に関連するURLの転送<br/>
+            ・当サービスに含まれる著作権・商標権などの知的財産権を侵害するURLの転送<br/>
+            ・スパムURLの転送<br/>
+            ・当サービスや他のユーザー、第三者のサーバー・ネットワーク機能を破壊または妨害する行為<br/>
+            ・提供機能以外の方法で当サービスを利用する行為<br>
+            ・当サービスの運営を妨害するおそれのある行為<br>
+            ・不正アクセスやその試行行為<br>
+            ・不正な目的で当サービスを利用する行為<br>
+            ・その他、当サービスが不適切と判断する行為<br><br>
+
+            利用制限<br>
+            当サービスは、ユーザーが以下のいずれかに該当する場合、事前通知なく利用を一部または全部制限することができます。<br>
+            ・本規約のいずれかの条項に違反した場合<br>
+            ・登録ユーザーで最終利用から一定期間が経過した場合<br>
+            ・その他、当サービスが利用を適切でないと判断した場合<br>
+            ・当サービスは、本条に基づく対応によって発生した損害について、一切の責任を負いません。<br><br>
+
+            当サービスは、事前通知なく内容を変更または提供を中止することができ、これにより発生した損害について責任を負いません。<br>
+            当サービスは、必要と判断した場合、事前通知なく本規約を変更できます。変更後に利用を開始した場合、変更後の規約に同意したものとみなします。<br>
+            当サービスが取得した個人情報は、当サービスの「プライバシーポリシー」に従い適切に取り扱います。
+        </p>
+    </div>
+
+    <div class="border rounded-sm h-full p-5">
+        <h1 class="text-3xl border-b w-fit mb-3">プライバシーポリシー</h1>
+        <p>
+            このプライバシーポリシー（以下「本規約」といいます）は、本Webサイト上で提供するサービスの情報の取り扱いを定めるものです。<br/><br/>
+
+            収集する情報<br>
+            ・本サービス上で入力された、URL<br>
+            ・本サービス上で作成されたURLのコードと作成時の日時<br>
+            ・本サービス上でURLの作成を行った利用者のIPアドレスとブラウザ情報<br><br>
+
+            情報の使用目的<br>
+            ・本サービスの運営のため<br>
+            ・規約違反や不正利用の防止・対応のため<br><br>
+
+            利用目的の変更<br>
+            本サービスの運営はいつでも情報の利用目的を変更できる。<br>
+            変更後の通知は行わないものとする<br>
+
+            データの削除<br>
+            基本的に一切行わないものとする。<br>
+
+            プライバシーポリシーの変更<br>
+            どんな場合でも、ユーザーへの通知なく変更できます。<br>
+            変更後のプライバシーポリシーは、本Webサイトに掲載した時点から効力を生じます。
+        </p>
     </div>
 
     <script>
