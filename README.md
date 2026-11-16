@@ -22,6 +22,8 @@ go run .
 
 本番環境では HTTPS を終端するリバースプロキシの背後で実行してください。管理者Cookieは HttpOnly、SameSite、Secure 属性を使用します。複数プロセスで動かす場合は、全プロセスで同じ `ADMIN_SESSION_KEY` を設定してください。データは作業ディレクトリ内の `data.db` に保存されます。
 
+Cloudflare Tunnel 経由では、短縮URLの作成元IPとして `CF-Connecting-IP` を記録します。このヘッダーが有効なIPアドレスでない場合は、接続元アドレス (`RemoteAddr`) を使います。Tunnel の接続先ポートを外部から直接公開せず、Cloudflare 経由に限定してください。
+
 管理者パネルは `/admin` です。ユーザー名とパスワードは `ADMIN_USERNAME`、`ADMIN_PASSWORD` に設定した値を使います。URL一覧は10件ずつ表示し、コード・URL・作成元IP・Ban理由・警告理由で検索できます。Banと警告には理由が必要です。
 
 ## 設定

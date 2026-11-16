@@ -388,11 +388,24 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 }
 
 func clientIP(r *http.Request) string {
+	// Cloudflare sets this header on requests sent through its proxy and Tunnel.
+	// Ignore malformed values so they cannot be stored as an apparent client IP.
+	if value := strings.TrimSpace(r.Header.Get("CF-Connecting-IP")); value != "" {
+		if ip := net.ParseIP(value); ip != nil {
+			return ip.String()
+		}
+	}
+
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err == nil {
-		return host
+		if ip := net.ParseIP(host); ip != nil {
+			return ip.String()
+		}
 	}
-	return r.RemoteAddr
+	if ip := net.ParseIP(r.RemoteAddr); ip != nil {
+		return ip.String()
+	}
+	return "unknown"
 }
 
 func isPrivateHost(host string) bool {
