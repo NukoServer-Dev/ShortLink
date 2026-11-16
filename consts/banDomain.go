@@ -15,8 +15,8 @@ var banDomains = []string{
 }
 
 func IsInclude(url string) bool {
-	for domain := range banDomains {
-		if strings.Contains(url, banDomains[domain]) {
+	for _, domain := range banDomains {
+		if strings.Contains(strings.ToLower(url), domain) {
 			return true
 		}
 	}
