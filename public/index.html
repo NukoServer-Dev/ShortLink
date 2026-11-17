@@ -102,12 +102,31 @@
 
             if (res.ok) {
                 result.replaceChildren();
+
+                const border = document.createElement("div");
+                border.className = "border rounded-sm h-full p-5";
+
+                const success = document.createElement("h3");
+                success.className = "text-2xl border-b w-fit mb-3"
+                success.textContent = "作成しました。"
+
+                const span = document.createElement("span");
+                span.textContent = "長押しでコピーできます↓";
+
+                const br = document.createElement("br");
+
                 const link = document.createElement("a");
-                link.textContent = `作成しました。長押しでコピーできます: ${location.origin}/s/${json.Code}`;
+                link.textContent = `${location.origin}/s/${json.Code}`;
                 link.href = `${location.origin}/s/${json.Code}`;
-                result.appendChild(link);
+                link.className = "border-b"
+
+                border.appendChild(success);
+                border.appendChild(span);
+                border.appendChild(br);
+                border.appendChild(link);
+                result.appendChild(border);
             } else {
-                alert(json.error || "短縮URLを作成できませんでした。");
+                alert(json.Error || "短縮URLを作成できませんでした。");
             }
         }
     </script>
